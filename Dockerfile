@@ -13,6 +13,7 @@
 # limitations under the License.
 
 FROM       centos:centos7
+#FROM buhuipao/centos7-ssh:v0.1.1
 
 MAINTAINER Sonatype <cloud-ops@sonatype.com>
 
@@ -24,6 +25,16 @@ RUN yum install -y \
   curl tar \
   && yum clean all
 
+ADD nginx.repo /etc/yum.repos.d/
+RUN yum install -y nginx &&\
+    rm -f /etc/nginx.conf
+
+# Copy a configuration file from the current directory
+ADD nginx.conf /etc/nginx/
+
+# Append "daemon off;" to the configuration file
+#RUN echo "daemon off;" >> /etc/nginx/nginx.conf
+  
 # install Oracle JRE
 ENV JAVA_HOME=/opt/java \
   JAVA_VERSION_MAJOR=8 \
@@ -64,14 +75,19 @@ RUN sed \
 
 RUN useradd -r -u 200 -m -c "nexus role account" -d ${NEXUS_DATA} -s /bin/false nexus
 
+RUN systemctl enable nginx 
+RUN echo -e "#!/bin/bash\n/usr/sbin/nginx\n/opt/sonatype/nexus/bin/nexus run" > /root/init.sh
+RUN chmod u+x /root/init.sh
+
 VOLUME ${NEXUS_DATA}
 
 EXPOSE 8081
-USER nexus
-WORKDIR /opt/sonatype/nexus
+EXPOSE 8082
+#USER nexus
+#WORKDIR /opt/sonatype/nexus
 
 ENV JAVA_MAX_MEM=1200m \
   JAVA_MIN_MEM=1200m \
   EXTRA_JAVA_OPTS=""
-
-CMD ["bin/nexus", "run"]
+  
+CMD /root/init.sh
