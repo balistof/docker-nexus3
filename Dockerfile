@@ -72,6 +72,8 @@ RUN sed \
   && sed \
     -e "s|nexus-context-path=/|nexus-context-path=/\${NEXUS_CONTEXT}|g" \
     -i /opt/sonatype/nexus/etc/org.sonatype.nexus.cfg
+	
+RUN sed -e "s|nexus-context-path|${NEXUS_CONTEXT}|g" -i /etc/nginx/nginx.conf
 
 RUN useradd -r -u 200 -m -c "nexus role account" -d ${NEXUS_DATA} -s /bin/false nexus
 
